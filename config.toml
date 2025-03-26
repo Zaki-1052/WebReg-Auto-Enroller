@@ -1,0 +1,31 @@
+[webreg]
+term = "WI25"
+polling_interval = 30
+cookie = "JSESSIONID=66926C6B58A4D071EB3637421F01DBE9; TS01755bce=01f0fc640d24e29ac8f70d694de417ab3d9d591ffb01357f9c63a131490744e17fb52a4a2042af915fa6dcc93886ba50c9d412e5fc545f1fbc200fa81db6a18a96e0e20ec7f6375cc305d3ac5cab26ddc550f340cbb6ce2f25ec179107cd0767de699cc9a93f8644333b7f317b4bad91ab6523719d0f23bbf9bb5f0967d35c38498fb6f3f50c3bb2ec7b9e2a3111be3e2eb869c79c8d36443303898b1a485fb0b981eb5f332494750e13c311daf838c9652ceaf313f6c78ebc0aa2afebfe0d6ba5e2b46d710bbfa1d0360fa598690ccb71e8962878ad2b56b9aca045bf5fe5af490a043fc82942b8e5ae94ca8b2325cbcc382b19f39417565124c2dc4f74ce380673684f3aca266ce56671a2c6a4ac8543b6ec85f7af0b9366fa9d51c7d6d3eaebdc251765; itscookie=!TOCXFGzPnO6kAXsygcMfbl8GeAbEztojFIC5bWaNjOZTk/qrtrj5iCSSak1ExLo+DbkSLkGhJCtPqQw=; __utmc=57960238; stuno=A18247936; style=default; __utma=57960238.1761315982.1720425996.1723612926.1723710495.3; jlinkauthserver=discount; jlinkserver=act; jssoserver=discount; serverTime=1734551237935; sessionExpiry=1734558437935; _saml_idp=dXJuOm1hY2U6aW5jb21tb246dWNzZC5lZHU%3D; jlinkauthserver=discount; SID=17401105512766; SLID=ze49175a321e05e0aed8c05e22ee60ba4; jlinksessionidx=z2db4799bba50723ba0cb0034380af3aa; xjlinkloginStudent.Transactional=OK; jlinkappx=/webreg2/; _shibsession_64656661756c7468747470733a2f2f6163742e756373642e6564752f73686962626f6c6574682d7370=_c41182e4d68a40a937c182f37f5a08dc; TS01111c3f=01f0fc640d52b29fd683d8a1381782857a2614581c5c2a717892b8f042a398b89591d29367ff690b30b697cb16b196158b28081fe54fa0617c655e157f44efc91cb2b361fb54ffa37b427f75225937a670d3bdd905981892e6483a42a3608fbf094a3f8f81aa57b86ed9c1a60d10896c92ca794bd9b4f248f14835f5a087d18f513218a242435a2bfaa064b8d9469bf175ca2a31de1d4ef14ae551b0adf3263320836c538021cec1e84cd3f9f7da69aa5fb81b8c2184999b12d5e600cb3ae2ad80af032dad820508307684e8a6b33392e21aca3e04cea7330bb017f63d9b459ab1fd7b5a9aa7319ad0ad2d05a883f8696bd69130fea34e211b15ac45af32d986fe163ce90243356328f94292226cddb9dc0fecfb54"
+
+[notifications]
+gmail_address = "zakiralibhai@gmail.com"
+gmail_app_password = "wcdp cqjo izya mefo"
+email_recipients = ["zakiralibhai@gmail.com", "zalibhai@ucsd.edu", "kmatsuoka@ucsd.edu"]
+discord_webhook_url = "https://discord.com/api/webhooks/1329907794731597904/aBQ_jRRGgwyTpMWeQ1h0Kd_RsdwW5KGud4rsqQnVEz_7fBS4QRbTndBn1-aBrzSXfHqf"
+
+[courses.chem]
+department = "CHEM"
+course_code = "6B"
+sections = [
+    { lecture = "C00", discussions = [] },
+    { lecture = "D00", discussions = [] }
+]
+
+[courses.bild]
+department = "VIS"
+course_code = "152D"
+lecture_section = "A00"
+discussion_sections = ["A03"]
+
+[monitoring]
+log_file = "webreg_monitor.log"
+stats_file = "enrollment_stats.json"
+cookie_refresh_interval = 480
+max_retries = 3
+retry_delay = 1000
