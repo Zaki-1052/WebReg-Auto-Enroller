@@ -375,6 +375,7 @@ fn clone_wrapper(&self) -> WebRegWrapper {
             section,
             department,
             course_code,
+            self.config.webreg.polling_interval,
             &self.notifier,
         ).await;
 
@@ -443,6 +444,7 @@ async fn monitor_section(
     section: &str,
     department: &str,
     course_code: &str,
+    polling_interval: u64,
 ) -> Result<Option<String>, Box<dyn StdError + Send + Sync>> {
     let course_info = wrapper.req(term).parsed().get_course_info(department, course_code).await?;
 
@@ -521,7 +523,7 @@ async fn monitor_section(
                     section,
                     section_info.enrolled_ct,
                     section_info.total_seats,
-                    30
+                    polling_interval
                 );
             }
         }
@@ -544,12 +546,13 @@ async fn monitor_section_with_retry(
     section: &str,
     department: &str,
     course_code: &str,
+    polling_interval: u64,
     notifier: &Notifier,
 ) -> Result<Option<String>, Box<dyn StdError + Send + Sync>> {
     let retry_strategy = get_retry_strategy();
 
     let result = tokio_retry::Retry::spawn(retry_strategy, || async {
-        match monitor_section(wrapper, term, section, department, course_code).await {
+        match monitor_section(wrapper, term, section, department, course_code, polling_interval).await {
             Ok(result) => Ok(result),
             Err(e) => {
                 warn!("Error monitoring section {}: {:?}, retrying...", section, e);
@@ -730,6 +733,7 @@ async fn run_monitor(
                     &section_group.lecture,
                     &chem_config.department(),
                     &chem_config.course_code(),
+                    state_guard.config.webreg.polling_interval,
                     &notifier,
                 ).await {
                     state_guard.stats.enrollment_attempts += 1;
@@ -755,6 +759,7 @@ async fn run_monitor(
                         discussion,
                         &chem_config.department(),
                         &chem_config.course_code(),
+                        state_guard.config.webreg.polling_interval,
                         &notifier,
                     ).await {
                         state_guard.stats.enrollment_attempts += 1;
@@ -785,6 +790,7 @@ async fn run_monitor(
                     &section_group.lecture,
                     &bild_config.department,
                     &bild_config.course_code,
+                    state_guard.config.webreg.polling_interval,
                     &notifier,
                 ).await {
                     state_guard.stats.enrollment_attempts += 1;
@@ -810,6 +816,7 @@ async fn run_monitor(
                         discussion,
                         &bild_config.department,
                         &bild_config.course_code,
+                        state_guard.config.webreg.polling_interval,
                         &notifier,
                     ).await {
                         state_guard.stats.enrollment_attempts += 1;
