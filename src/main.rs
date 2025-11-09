@@ -109,6 +109,12 @@ struct MonitoringConfig {
     cookie_refresh_interval: u64,
     max_retries: u32,
     retry_delay: u64,
+    #[serde(default = "default_seat_threshold")]
+    seat_threshold: i64,  // Threshold for available seats (0 = any availability, 3 = fewer than 3 seats)
+}
+
+fn default_seat_threshold() -> i64 {
+    0  // Default to aggressive mode (any seat availability)
 }
 
 use std::collections::HashMap;
@@ -376,6 +382,7 @@ fn clone_wrapper(&self) -> WebRegWrapper {
             department,
             course_code,
             self.config.webreg.polling_interval,
+            self.config.monitoring.seat_threshold,
             &self.notifier,
         ).await;
 
@@ -445,6 +452,7 @@ async fn monitor_section(
     department: &str,
     course_code: &str,
     polling_interval: u64,
+    seat_threshold: i64,
 ) -> Result<Option<String>, Box<dyn StdError + Send + Sync>> {
     let course_info = wrapper.req(term).parsed().get_course_info(department, course_code).await?;
 
@@ -482,7 +490,14 @@ async fn monitor_section(
             use std::io::Write;
             writeln!(file, "{}", details)?;
 
-            if section_info.available_seats < 3 {
+            // Determine if we should attempt enrollment based on threshold
+            // threshold = 0: Any availability (available_seats > 0)
+            // threshold > 0: Seats available AND within threshold (0 < available_seats <= threshold)
+            let has_availability = section_info.available_seats > 0;
+            let within_threshold = seat_threshold == 0 || section_info.available_seats <= seat_threshold;
+            let should_attempt = has_availability && within_threshold;
+
+            if should_attempt {
                 // Double-check the section immediately before returning
                 let recheck = wrapper.req(term).parsed().get_course_info(department, course_code).await?;
                 for recheck_info in recheck {
@@ -504,10 +519,20 @@ async fn monitor_section(
                         );
                         writeln!(file, "{}", recheck_details)?;
 
+                        // Recheck with same logic
+                        let recheck_has_availability = recheck_info.available_seats > 0;
+                        let recheck_within_threshold = seat_threshold == 0 || recheck_info.available_seats <= seat_threshold;
+                        let recheck_should_attempt = recheck_has_availability && recheck_within_threshold;
+
                         // Only proceed if both checks show availability
-                        if recheck_info.available_seats < 3 {
-                            info!("🎯 Seats are below 3! Section {} has {} seats available (verified)",
-                                section, recheck_info.available_seats);
+                        if recheck_should_attempt {
+                            let threshold_msg = if seat_threshold == 0 {
+                                "Found opening!".to_string()
+                            } else {
+                                format!("Seats are at or below threshold ({})!", seat_threshold)
+                            };
+                            info!("🎯 {} Section {} has {} seats available (verified)",
+                                threshold_msg, section, recheck_info.available_seats);
                             return Ok(Some(section_info.section_id.clone()));
                         } else {
                             info!("⚠️  False positive: Section {} showed availability but recheck failed",
@@ -547,12 +572,13 @@ async fn monitor_section_with_retry(
     department: &str,
     course_code: &str,
     polling_interval: u64,
+    seat_threshold: i64,
     notifier: &Notifier,
 ) -> Result<Option<String>, Box<dyn StdError + Send + Sync>> {
     let retry_strategy = get_retry_strategy();
 
     let result = tokio_retry::Retry::spawn(retry_strategy, || async {
-        match monitor_section(wrapper, term, section, department, course_code, polling_interval).await {
+        match monitor_section(wrapper, term, section, department, course_code, polling_interval, seat_threshold).await {
             Ok(result) => Ok(result),
             Err(e) => {
                 warn!("Error monitoring section {}: {:?}, retrying...", section, e);
@@ -718,6 +744,8 @@ async fn run_monitor(
                 let notifier = state_guard.notifier.clone();
                 let chem_config = state_guard.config.courses.chem.clone();
                 let bild_config = state_guard.config.courses.bild.clone();
+                let polling_interval = state_guard.config.webreg.polling_interval;
+                let seat_threshold = state_guard.config.monitoring.seat_threshold;
 
                 // Monitor CHEM sections
                 let chem_sections = match &chem_config {
@@ -733,7 +761,8 @@ async fn run_monitor(
                     &section_group.lecture,
                     &chem_config.department(),
                     &chem_config.course_code(),
-                    state_guard.config.webreg.polling_interval,
+                    polling_interval,
+                    seat_threshold,
                     &notifier,
                 ).await {
                     state_guard.stats.enrollment_attempts += 1;
@@ -759,7 +788,8 @@ async fn run_monitor(
                         discussion,
                         &chem_config.department(),
                         &chem_config.course_code(),
-                        state_guard.config.webreg.polling_interval,
+                        polling_interval,
+                        seat_threshold,
                         &notifier,
                     ).await {
                         state_guard.stats.enrollment_attempts += 1;
@@ -790,7 +820,8 @@ async fn run_monitor(
                     &section_group.lecture,
                     &bild_config.department,
                     &bild_config.course_code,
-                    state_guard.config.webreg.polling_interval,
+                    polling_interval,
+                    seat_threshold,
                     &notifier,
                 ).await {
                     state_guard.stats.enrollment_attempts += 1;
@@ -816,7 +847,8 @@ async fn run_monitor(
                         discussion,
                         &bild_config.department,
                         &bild_config.course_code,
-                        state_guard.config.webreg.polling_interval,
+                        polling_interval,
+                        seat_threshold,
                         &notifier,
                     ).await {
                         state_guard.stats.enrollment_attempts += 1;
@@ -840,7 +872,7 @@ async fn run_monitor(
                 info!("Health status: {:?}", health);
                 state_guard.last_check_time = Local::now().to_string();
 
-                sleep(Duration::from_secs(state_guard.config.webreg.polling_interval)).await;
+                sleep(Duration::from_secs(polling_interval)).await;
             } => {}
         }
     }
