@@ -67,7 +67,24 @@ impl AppState {
         println!("Creating WebReg wrapper and notifier...");
         let term = config.webreg.term.clone();
         let notifier = Notifier::new(&config.notifications)?;
-        let wrapper = initialize_webreg(&config.webreg).await?;
+
+        // Try to initialize WebReg, but don't fail if it doesn't work
+        // (cookie might be expired, user can update it via web UI)
+        let (wrapper, is_connected) = match initialize_webreg(&config.webreg).await {
+            Ok(w) => {
+                println!("WebReg connection successful");
+                (w, true)
+            },
+            Err(e) => {
+                println!("WebReg connection failed (this is OK for web mode): {:?}", e);
+                // Create a basic wrapper even if connection failed
+                let wrapper = WebRegWrapper::builder()
+                    .with_cookies(&config.webreg.cookie)
+                    .try_build_wrapper()
+                    .ok_or("Failed to create WebReg wrapper")?;
+                (wrapper, false)
+            }
+        };
 
         println!("AppState::new() completed successfully");
         Ok(Self {
@@ -77,7 +94,7 @@ impl AppState {
             wrapper,
             start_time: SystemTime::now(),
             last_check_time: Local::now().to_string(),
-            is_connected: true,
+            is_connected,
             term,
         })
     }
