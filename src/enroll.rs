@@ -17,16 +17,14 @@ pub async fn try_enroll(
         .try_build()
         .ok_or("Failed to build enrollment request")?;
 
-    match wrapper.req(term).parsed().add_section(AddType::Enroll, enroll_request, true).await {
-        Ok(result) => {
-            info!("Enrollment attempt result: {:?}", result);
-            Ok(result)
-        },
-        Err(e) => {
+    let result = wrapper.req(term).parsed().add_section(AddType::Enroll, enroll_request, true).await
+        .map_err(|e| {
             error!("Enrollment error: {:?}", e);
-            Ok(false)
-        }
-    }
+            e
+        })?;
+
+    info!("Enrollment attempt result: {:?}", result);
+    Ok(result)
 }
 
 pub async fn try_enroll_with_retry(
