@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use std::time::Duration;
 use tokio::time::sleep;
-use log::info;
+use log::{info, error};
 use chrono::Local;
 
 use crate::state::AppState;
@@ -83,7 +83,16 @@ impl JobManager {
 
                         // Clone all the values we need
                         let term = state_guard.term.clone();
-                        let wrapper = state_guard.clone_wrapper();
+                        let polling_interval_val = state_guard.config.webreg.polling_interval;
+                        let wrapper = match state_guard.clone_wrapper() {
+                            Ok(w) => w,
+                            Err(e) => {
+                                error!("Failed to clone WebRegWrapper: {:?}", e);
+                                drop(state_guard);
+                                sleep(Duration::from_secs(polling_interval_val)).await;
+                                return;
+                            }
+                        };
                         let notifier = state_guard.notifier.clone();
                         let chem_config = state_guard.config.courses.chem.clone();
                         let bild_config = state_guard.config.courses.bild.clone();

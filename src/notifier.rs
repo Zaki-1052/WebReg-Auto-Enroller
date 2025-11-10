@@ -30,7 +30,7 @@ impl Notifier {
         );
 
         let smtp_transport = SmtpTransport::relay("smtp.gmail.com")
-            .unwrap()
+            .map_err(|e| format!("Failed to create SMTP relay: {}", e))?
             .credentials(creds)
             .build();
 
@@ -53,12 +53,33 @@ impl Notifier {
 
     async fn send_email(&self, content: &str) {
         for recipient in &self.config.email_recipients {
-            let email = Message::builder()
-                .from(format!("WebReg Monitor <{}>", self.config.gmail_address).parse().unwrap())
-                .to(recipient.parse().unwrap())
+            let from_address = match format!("WebReg Monitor <{}>", self.config.gmail_address).parse() {
+                Ok(addr) => addr,
+                Err(e) => {
+                    error!("Invalid from address '{}': {:?}", self.config.gmail_address, e);
+                    continue;
+                }
+            };
+
+            let to_address = match recipient.parse() {
+                Ok(addr) => addr,
+                Err(e) => {
+                    error!("Invalid recipient address '{}': {:?}", recipient, e);
+                    continue;
+                }
+            };
+
+            let email = match Message::builder()
+                .from(from_address)
+                .to(to_address)
                 .subject("WebReg Course Opening Alert!")
-                .body(content.to_string())
-                .unwrap();
+                .body(content.to_string()) {
+                    Ok(msg) => msg,
+                    Err(e) => {
+                        error!("Failed to build email message: {:?}", e);
+                        continue;
+                    }
+                };
 
             match self.smtp_transport.send(&email) {
                 Ok(_) => info!("📧 Email sent to {}", recipient),
