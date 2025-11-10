@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebReg Auto-Enroller</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>WebReg Auto-Enroller</h1>
+            <p class="subtitle">Automatically monitor and enroll in UCSD courses</p>
+        </header>
+
+        <!-- Status Section -->
+        <section class="status-section">
+            <h2>Status</h2>
+            <div class="status-grid">
+                <div class="status-card">
+                    <div class="status-label">Connection</div>
+                    <div class="status-value" id="connection-status">Unknown</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-label">Monitoring</div>
+                    <div class="status-value" id="monitoring-status">Stopped</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-label">Enrollment Attempts</div>
+                    <div class="status-value" id="enrollment-attempts">0</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-label">Successful Enrollments</div>
+                    <div class="status-value" id="successful-enrollments">0</div>
+                </div>
+            </div>
+            <div class="last-check">
+                Last Check: <span id="last-check-time">Never</span>
+            </div>
+        </section>
+
+        <!-- Configuration Section -->
+        <section class="config-section">
+            <h2>Configuration</h2>
+
+            <div class="form-group">
+                <label for="term">Quarter/Term</label>
+                <input type="text" id="term" placeholder="e.g., WI25" required>
+                <span class="help-text">Format: [Season][Year] (e.g., WI25, SP25, FA24)</span>
+            </div>
+
+            <div class="form-group">
+                <label for="polling-interval">Polling Interval (seconds)</label>
+                <input type="number" id="polling-interval" min="10" max="300" value="30" required>
+                <span class="help-text">How often to check for seat availability</span>
+            </div>
+
+            <div class="form-group">
+                <label for="cookie">WebReg Cookie</label>
+                <textarea id="cookie" rows="4" placeholder="Paste your WebReg session cookie here" required></textarea>
+                <span class="help-text">Copy from your browser's developer tools (Application > Cookies)</span>
+            </div>
+
+            <div class="form-group">
+                <label for="monitoring-mode">Monitoring Mode</label>
+                <select id="monitoring-mode" required>
+                    <option value="include">Include - Enroll when seats become available</option>
+                    <option value="exclude">Exclude - Enroll only when seats are limited</option>
+                </select>
+                <span class="help-text">Choose enrollment strategy</span>
+            </div>
+
+            <div class="form-group" id="threshold-group">
+                <label for="seat-threshold">Seat Threshold</label>
+                <input type="number" id="seat-threshold" min="0" max="50" value="3">
+                <span class="help-text">Enroll only when seats are at or below this number (0 = any availability)</span>
+            </div>
+        </section>
+
+        <!-- Courses Section -->
+        <section class="courses-section">
+            <h2>Courses</h2>
+            <div id="courses-container"></div>
+            <button type="button" class="btn btn-secondary" onclick="addCourse()">+ Add Course</button>
+        </section>
+
+        <!-- Notifications Section -->
+        <section class="notifications-section">
+            <h2>Notifications</h2>
+
+            <div class="form-group">
+                <label for="gmail-address">Gmail Address</label>
+                <input type="email" id="gmail-address" placeholder="your.email@gmail.com">
+            </div>
+
+            <div class="form-group">
+                <label for="gmail-password">Gmail App Password</label>
+                <input type="password" id="gmail-password" placeholder="16-character app password">
+                <span class="help-text">Generate at: myaccount.google.com/apppasswords</span>
+            </div>
+
+            <div class="form-group">
+                <label for="email-recipients">Email Recipients (comma-separated)</label>
+                <input type="text" id="email-recipients" placeholder="email1@example.com, email2@example.com">
+            </div>
+
+            <div class="form-group">
+                <label for="discord-webhook">Discord Webhook URL</label>
+                <input type="url" id="discord-webhook" placeholder="https://discord.com/api/webhooks/...">
+                <span class="help-text">Optional: Discord channel webhook for notifications</span>
+            </div>
+        </section>
+
+        <!-- Actions Section -->
+        <section class="actions-section">
+            <button type="button" class="btn btn-primary" onclick="saveConfiguration()">Save Configuration</button>
+            <button type="button" class="btn btn-success" onclick="startMonitoring()">Start Monitoring</button>
+            <button type="button" class="btn btn-danger" onclick="stopMonitoring()">Stop Monitoring</button>
+        </section>
+
+        <!-- Message Display -->
+        <div id="message-display" class="message hidden"></div>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>

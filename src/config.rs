@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 // Constants
 pub const DEFAULT_RETRY_ATTEMPTS: u32 = 3;
@@ -79,7 +79,7 @@ pub fn to_section_groups(course: &LegacyCourseDetails) -> Vec<SectionGroup> {
     }]
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SectionGroup {
     pub lecture: String,
     pub discussions: Vec<String>,
