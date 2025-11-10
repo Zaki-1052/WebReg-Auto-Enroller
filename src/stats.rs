@@ -8,7 +8,7 @@ pub struct SectionFailures {
     pub last_failure: DateTime<Local>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct EnrollmentStats {
     pub total_checks: u64,
     pub openings_found: u64,

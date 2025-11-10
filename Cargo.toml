@@ -12,6 +12,10 @@ path = "src/main.rs"
 name = "webreg-web"
 path = "src/web_main.rs"
 
+[[bin]]
+name = "webreg-web-multiuser"
+path = "src/web_main_multiuser.rs"
+
 [dependencies]
 webweg = { version = "0.9.2", features = ["multi"] }
 tokio = { version = "1.0", features = ["full"] }
@@ -26,6 +30,24 @@ toml = "0.7"
 futures = "0.3"
 chrono = { version = "0.4", features = ["serde"] }
 axum = "0.7"
+axum-extra = { version = "0.9", features = ["typed-header"] }
 tower = "0.4"
 tower-http = { version = "0.5", features = ["fs", "cors"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
+
+# Database support
+sqlx = { version = "0.7", features = ["runtime-tokio-native-tls", "postgres", "migrate", "uuid", "chrono", "json"] }
+
+# Authentication (Clerk JWT verification)
+jsonwebtoken = "9.2"
+base64 = "0.21"
+
+# Encryption for storing sensitive data
+aes-gcm = "0.10"
+rand = "0.8"
+
+# Environment variables
+dotenv = "0.15"
+
+# Async trait support
+async-trait = "0.1"
