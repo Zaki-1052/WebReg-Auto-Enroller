@@ -231,6 +231,9 @@ impl JobManager {
                         info!("Health status: {:?}", health);
                         state_guard.last_check_time = Local::now().to_string();
 
+                        // Release lock before sleeping to allow cookie refresh and API calls
+                        drop(state_guard);
+
                         sleep(Duration::from_secs(polling_interval)).await;
                     } => {}
                 }
