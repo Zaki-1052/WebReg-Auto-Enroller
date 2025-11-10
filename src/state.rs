@@ -99,16 +99,22 @@ impl AppState {
         })
     }
 
-    pub fn clone_wrapper(&self) -> WebRegWrapper {
+    pub fn clone_wrapper(&self) -> Result<WebRegWrapper, Box<dyn StdError + Send + Sync>> {
         WebRegWrapper::builder()
             .with_cookies(&self.config.webreg.cookie)
             .try_build_wrapper()
-            .expect("Failed to clone WebRegWrapper")
+            .ok_or_else(|| "Failed to clone WebRegWrapper - invalid cookie".into())
     }
 
     pub fn update_stats(&mut self) {
         self.stats.last_updated = Local::now().to_string();
-        let stats_json = serde_json::to_string_pretty(&self.stats).unwrap();
+        let stats_json = match serde_json::to_string_pretty(&self.stats) {
+            Ok(json) => json,
+            Err(e) => {
+                error!("Failed to serialize stats: {:?}", e);
+                return;
+            }
+        };
         if let Err(e) = fs::write(&self.config.monitoring.stats_file, stats_json) {
             error!("Failed to write stats file: {:?}", e);
         }
